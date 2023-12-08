@@ -1,0 +1,30 @@
+version: '3'
+
+tasks:
+  database-up:
+    run: once
+    cmds:
+      - docker-compose -f docker/docker-compose.yml up -d
+      - sleep 20
+  database-down:
+    run: once
+    cmds:
+      - docker-compose -f docker/docker-compose.yml down
+  poetry:install:
+    cmds:
+      - poetry install
+  import-data:
+    run: once
+    preconditions:
+      - test -f import-done
+    deps:
+      - database-up
+    cmds:
+      - poetry run python economic_indicator/create_tables.py
+      - poetry run python economic_indicator/import_data.py
+
+  render-ui:
+    deps:
+      - import-data
+    cmds:
+      - poetry run streamlit run economic_indicator/render.py
